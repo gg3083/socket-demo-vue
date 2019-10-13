@@ -140,7 +140,7 @@
                 this.getDataList()
             },
             initWebSocket(){ //初始化
-                const uri = "ws://3083.work/socket/messageSocket/"+this.uid;
+                const uri = "wss://3083.work/socket/messageSocket/"+this.uid;
                 this.websocket = new WebSocket(uri);
                 var that = this.websocket;
                 that.onopen = this.websocketOpen;
