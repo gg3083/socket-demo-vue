@@ -92,7 +92,7 @@
           }
         },
         created() {
-            this.uid =  'skt9527';
+            this.uid =  (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
             this.search.uid = this.uid
             console.log('进入首页----')
             this.getDataList()
