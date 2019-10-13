@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // create an axios instance
 const service = axios.create({
-  baseURL: 'https://3083.work', // url = base url + request url
+  baseURL: 'https://3083.work/socket', // url = base url + request url
   withCredentials: true, // send cookies when cross-domain requests
   timeout: 5000 // request timeout
 })
