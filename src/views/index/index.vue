@@ -32,7 +32,7 @@
                         <span>在线聊天中</span>
                     </el-header>
                     <el-main>
-                        <div class="chat-content infinite-list"  v-infinite-scroll="load" infinite-scroll-disabled="disabled" style="overflow:auto">
+                        <div class="chat-content infinite-list"  v-infinite-scroll="load" :infinite-scroll-disabled="disabled" style="overflow:auto">
                             <div v-for="item in chatInfoList" :class="{chat_info_left:!item.self,chat_info_right:item.self}">
                                 <p>{{item.sendUser}}：{{item.createTime | formateDate}}</p>
                                 <div :class="{chat_info_left_main:!item.self,chat_info_right_main:item.self}">
@@ -57,6 +57,8 @@
 <script>
     import { list } from '../../api/chatRecord'
     import { currentTime, parseTime } from '../../utils/index'
+    import { UUID_KEY, getStorage, saveStorage } from "@/utils/auth";
+
     export default {
         name: "index",
         data() {
@@ -79,9 +81,10 @@
                 websocket: {},
                 search:{
                     pageNo:1,
-                    pageSize:10,
+                    pageSize:999,
                     uid:''
-                }
+                },
+                total:10,
             }
         },
         filters:{
@@ -92,19 +95,19 @@
           }
         },
         created() {
-            this.uid =  (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-            this.search.uid = this.uid
             console.log('进入首页----')
-            this.getDataList()
+            this.getUid()
+            this.getDataList('进入首页')
         },
         mounted:function(){
             this.initWebSocket();
         },
         computed:{
-            noMore () {
-                return this.chatInfoList.length >= 20
+            noMore() {
+                return !(this.total/this.search.pageSize + 1 >= this.search.pageNo)
             },
-            disabled () {
+            disabled() {
+                console.log('-----'+this.noMore)
                 return this.noMore
             }
         },
@@ -113,7 +116,21 @@
             this.websocket.onclose =  this.websocketClose();
         },
         methods:{
-            getDataList(){
+            getUid(){
+                let uuid = getStorage(UUID_KEY)
+                if (uuid){
+                    this.uid = uuid
+                } else {
+                    uuid = (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1)
+                    console.log('生成的uuid为'+uuid)
+                    this.uid = uuid;
+                    saveStorage(UUID_KEY ,uuid)
+                }
+                console.log(uuid)
+                this.search.uid = uuid
+            },
+            getDataList(log){
+                console.log(log)
                 let param = this.search
                 list(param).then(res =>{
                     this.chatInfoList = res.data
@@ -137,10 +154,11 @@
                 }
                 this.websocketOpen()
                 this.chatInfo = ''
-                this.getDataList()
+                this.getDataList('发送消息')
             },
             initWebSocket(){ //初始化
                 const uri = "wss://3083.work/socket/messageSocket/"+this.uid;
+                // const uri = "ws://127.0.0.1:8091/messageSocket/"+this.uid;
                 this.websocket = new WebSocket(uri);
                 var that = this.websocket;
                 that.onopen = this.websocketOpen;
@@ -149,6 +167,7 @@
                 that.onclose = this.websocketClose;
             },
             websocketOpen() { //发送
+                console.log("WebSocket开启成功");
                 if (this.chatInfo == ''){
                     return
                 }
@@ -158,7 +177,6 @@
                 }
                 console.log(JSON.stringify(param))
                 this.websocket.send(JSON.stringify(param).toString());
-                console.log("WebSocket连接成功");
             },
             websocketError(e) { //错误
                 console.log("WebSocket连接发生错误");
@@ -166,20 +184,18 @@
             websocketReceiveMessage(e){ //数据接收
                 //处理逻辑
                 console.log(e)
-               this.getDataList()
+               this.getDataList('接受消息')
             },
             websocketClose(e){ //关闭
                 console.log("connection closed (" + e + ")");
             },
-            load () {
-                // this.chatInfoList.push({
-                //     imageUrl:'https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg',
-                //     author:'nmsl',
-                //     date:'2019-01-01 19:21:22',
-                //     content:'nn',
-                //     isSelf:true
-                // })
-            }
+            load() {
+               // console.log('nmsl')
+               // this.search.pageNo ++
+               // console.log(this.search)
+               // this.getDataList('load---')
+
+           }
         }
     }
 </script>
